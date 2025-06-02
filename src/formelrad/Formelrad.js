@@ -1,75 +1,79 @@
-import {useState} from "react";
-import '../css/mvp.css';
+import { useState } from "react";
+import "../css/mvp.css";
 import formelrad from "../image/formelradelektronik.gif";
 import InputField from "../formular/InputField";
 
 export default function Formelrad() {
     const [values, setValues] = useState({
-        u: 10,
-        i: 2,
+        u: "",
+        i: "",
         r: "",
         p: "",
         message: ""
-    })
+    });
+
+    const parse = (val) => val === "" ? NaN : parseFloat(val);
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        console.log("handleSubmit")
 
-        let count = 0;
-        if (values.u === "") count++;
-        if (values.i === "") count++;
-        if (values.r === "") count++;
-        if (values.p === "") count++;
-        if (count !== 2) {
-            setValues(values => ({...values, message: "2 Felder leer lassen, 2 Felder ausfüllen"}));
-        }else {
-            setValues(values => ({...values, message: ""}));
+        const u = parse(values.u);
+        const i = parse(values.i);
+        const r = parse(values.r);
+        const p = parse(values.p);
 
-            if (values.u === "" && values.i === "") {
-                /*calculate u and i */
-                setValues(values => ({...values, u: Math.sqrt(values.p * values.r)}));
-                setValues(values => ({...values, i: Math.sqrt(values.p / values.r)}));
-            } else if (values.u === "" && values.r === "") {
-                /*calculate u and r */
-                setValues(values => ({...values, u: values.p / values.i}));
-                setValues(values => ({...values, r: values.p / values.i / values.i}));
-            } else if (values.u === "" && values.p === "") {
-                /*calculate u and p */
-                setValues(values => ({...values, u: values.i * values.r}));
-                setValues(values => ({...values, p: values.i * values.i * values.r}));
-            } else if (values.i === "" && values.r === "") {
-                /*calculate i and r */
-                setValues(values => ({...values, i: values.p / values.u}));
-                setValues(values => ({...values, r: values.u * values.u / values.p}));
-            } else if (values.i === "" && values.p === "") {
-                /*calculate i and p */
-                setValues(values => ({...values, i: values.u / values.r}));
-                setValues(values => ({...values, p: values.u * values.u / values.r}));
-            } else {
-                /*calculate r and p */
-                setValues(values => ({...values, r: values.u / values.i}));
-                setValues(values => ({...values, p: values.u * values.i}));
-            }
+        const knownCount = [u, i, r, p].filter(val => !isNaN(val)).length;
+
+        if (knownCount !== 2) {
+            setValues(prev => ({ ...prev, message: "Bitte genau zwei Felder ausfüllen." }));
+            return;
         }
-    }
+
+        let newValues = { ...values, message: "" };
+
+        if (!isNaN(p) && !isNaN(r)) {
+            newValues.u = Math.sqrt(p * r).toFixed(2);
+            newValues.i = Math.sqrt(p / r).toFixed(2);
+        } else if (!isNaN(p) && !isNaN(i)) {
+            newValues.u = (p / i).toFixed(2);
+            newValues.r = (p / (i * i)).toFixed(2);
+        } else if (!isNaN(p) && !isNaN(u)) {
+            newValues.i = (p / u).toFixed(2);
+            newValues.r = (u * u / p).toFixed(2);
+        } else if (!isNaN(u) && !isNaN(i)) {
+            newValues.r = (u / i).toFixed(2);
+            newValues.p = (u * i).toFixed(2);
+        } else if (!isNaN(u) && !isNaN(r)) {
+            newValues.i = (u / r).toFixed(2);
+            newValues.p = (u * u / r).toFixed(2);
+        } else if (!isNaN(i) && !isNaN(r)) {
+            newValues.u = (i * r).toFixed(2);
+            newValues.p = (i * i * r).toFixed(2);
+        }
+
+        setValues(newValues);
+    };
+
+    const handleClear = (event) => {
+        event.preventDefault();
+        setValues({ u: "", i: "", r: "", p: "", message: "" });
+    };
 
     return (
-        <>
-            <section>
-                <header>
-                    <h2>Formelrad</h2>
-                    <img src={formelrad} width="200" alt="Formelrad"/>
-                </header>
-                <form onSubmit={handleSubmit}>
-                    <InputField color={"black"} value={values.u} label="Spannung" handleChange={e => {setValues(values => ({...values, u: e.target.value}))}} />
-                    <InputField color={"black"} value={values.i} label="Stromstärke" handleChange={e => {setValues(values => ({...values, i: e.target.value}))}} />
-                    <InputField color={"black"} value={values.r} label="Widerstand" handleChange={e => {setValues(values => ({...values, r: e.target.value}))}} />
-                    <InputField color={"black"} value={values.p} label="Leistung" handleChange={e => {setValues(values => ({...values, p: e.target.value}))}} />
-                    <button type="submit">Calculate</button>
-                    <p>{values.message}</p>
-                </form>
-            </section>
-        </>
-    )
+        <section>
+            <header>
+                <h2>Formelrad</h2>
+                <img src={formelrad} width="200" alt="Formelrad" />
+            </header>
+            <form onSubmit={handleSubmit}>
+                <InputField color="black" value={values.u} label="Spannung (U)" handleChange={e => setValues({ ...values, u: e.target.value })} />
+                <InputField color="black" value={values.i} label="Stromstärke (I)" handleChange={e => setValues({ ...values, i: e.target.value })} />
+                <InputField color="black" value={values.r} label="Widerstand (R)" handleChange={e => setValues({ ...values, r: e.target.value })} />
+                <InputField color="black" value={values.p} label="Leistung (P)" handleChange={e => setValues({ ...values, p: e.target.value })} />
+                <button type="submit">Berechnen</button>
+                <button onClick={handleClear} style={{ marginLeft: 10 }}>Zurücksetzen</button>
+                {values.message && <p style={{ color: "red" }}>{values.message}</p>}
+            </form>
+        </section>
+    );
 }
