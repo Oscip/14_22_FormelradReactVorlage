@@ -1,93 +1,101 @@
-import { useState } from "react";
-import "../css/mvp.css";
+import {useState} from "react";
+import '../css/mvp.css';
 import formelrad from "../image/formelradelektronik.gif";
 import InputField from "../formular/InputField";
 
 export default function Formelrad() {
-    const [values, setValues] = useState({ u: "", i: "", r: "", p: "", message: "" });
-    const [colors, setColors] = useState({ u: "black", i: "black", r: "black", p: "black" });
+    const [values, setValues] = useState({
+        u: 10,
+        i: 2,
+        r: "",
+        p: "",
+        message: ""
+    })
 
-    const parse = (val) => val === "" ? NaN : parseFloat(val);
+    const [colors, setColors] = useState({
+        u: "black",
+        i: "black",
+        r: "black",
+        p: "black",
+        message: "red"
+    })
+
+    function resetColors(){
+        setColors( colors=> ({...colors, u:"black", i:"black", r:"black", p:"black"}));
+    }
+
+    const handleClear = (event) => {
+        event.preventDefault();
+        console.log("handleClear");
+        setValues(values => ({...values, u:"", i:"", r:"", p:"", message: ""}))
+    }
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        const u = parse(values.u);
-        const i = parse(values.i);
-        const r = parse(values.r);
-        const p = parse(values.p);
+        console.log("handleSubmit")
+        resetColors();
+        let count = 0;
+        if (values.u === "") count++;
+        if (values.i === "") count++;
+        if (values.r === "") count++;
+        if (values.p === "") count++;
+        if (count !== 2) {
+            setValues(values => ({...values, message: "2 Felder leer lassen, 2 Felder ausfüllen"}));
+        }else {
+            setValues(values => ({...values, message: ""}));
 
-        const knownCount = [u, i, r, p].filter(val => !isNaN(val)).length;
-        if (knownCount !== 2) {
-            setValues(prev => ({ ...prev, message: "Bitte genau zwei Felder ausfüllen." }));
-            return;
+            if (values.u === "" && values.i === "") {
+                /*calculate u and i */
+                setValues(values => ({...values, u: Math.sqrt(values.p * values.r)}));
+                setValues(values => ({...values, i: Math.sqrt(values.p / values.r)}));
+                setColors( colors=> ({...colors, u:"red", i:"red"}));
+            } else if (values.u === "" && values.r === "") {
+                /*calculate u and r */
+                setValues(values => ({...values, u: values.p / values.i}));
+                setValues(values => ({...values, r: values.p / values.i / values.i}));
+                setColors( colors=> ({...colors, u:"red", r:"red"}));
+            } else if (values.u === "" && values.p === "") {
+                /*calculate u and p */
+                setValues(values => ({...values, u: values.i * values.r}));
+                setValues(values => ({...values, p: values.i * values.i * values.r}));
+                setColors( colors=> ({...colors, u:"red", p:"red"}));
+            } else if (values.i === "" && values.r === "") {
+                /*calculate i and r */
+                setValues(values => ({...values, i: values.p / values.u}));
+                setValues(values => ({...values, r: values.u * values.u / values.p}));
+                setColors( colors=> ({...colors, i:"red", r:"red"}));
+            } else if (values.i === "" && values.p === "") {
+                /*calculate i and p */
+                setValues(values => ({...values, i: values.u / values.r}));
+                setValues(values => ({...values, p: values.u * values.u / values.r}));
+                setColors( colors=> ({...colors, i:"red", p:"red"}));
+            } else {
+                /*calculate r and p */
+                setValues(values => ({...values, r: values.u / values.i}));
+                setValues(values => ({...values, p: values.u * values.i}));
+                setColors( colors=> ({...colors, r:"red", p:"red"}));
+            }
         }
-
-        let newValues = { u, i, r, p };
-        let newColors = { u: "black", i: "black", r: "black", p: "black" };
-
-        if (!isNaN(p) && !isNaN(r)) {
-            newValues.u = Math.sqrt(p * r);
-            newValues.i = Math.sqrt(p / r);
-            newColors.u = "red";
-            newColors.i = "red";
-        } else if (!isNaN(p) && !isNaN(i)) {
-            newValues.u = p / i;
-            newValues.r = p / (i * i);
-            newColors.u = "red";
-            newColors.r = "red";
-        } else if (!isNaN(p) && !isNaN(u)) {
-            newValues.i = p / u;
-            newValues.r = (u * u) / p;
-            newColors.i = "red";
-            newColors.r = "red";
-        } else if (!isNaN(u) && !isNaN(i)) {
-            newValues.r = u / i;
-            newValues.p = u * i;
-            newColors.r = "red";
-            newColors.p = "red";
-        } else if (!isNaN(u) && !isNaN(r)) {
-            newValues.i = u / r;
-            newValues.p = (u * u) / r;
-            newColors.i = "red";
-            newColors.p = "red";
-        } else if (!isNaN(i) && !isNaN(r)) {
-            newValues.u = i * r;
-            newValues.p = i * i * r;
-            newColors.u = "red";
-            newColors.p = "red";
-        }
-
-        setValues({
-            u: isNaN(newValues.u) ? "" : newValues.u.toFixed(2),
-            i: isNaN(newValues.i) ? "" : newValues.i.toFixed(2),
-            r: isNaN(newValues.r) ? "" : newValues.r.toFixed(2),
-            p: isNaN(newValues.p) ? "" : newValues.p.toFixed(2),
-            message: ""
-        });
-
-        setColors(newColors);
-    };
-
-    const handleClear = () => {
-        setValues({ u: "", i: "", r: "", p: "", message: "" });
-        setColors({ u: "black", i: "black", r: "black", p: "black" });
-    };
+    }
 
     return (
-        <section>
-            <header>
-                <h2>Formelrad</h2>
-                <img src={formelrad} width="200" alt="Formelrad" />
-            </header>
-            <form onSubmit={handleSubmit}>
-                <InputField color={colors.u} value={values.u} label="Spannung (U)" handleChange={e => setValues({ ...values, u: e.target.value })} />
-                <InputField color={colors.i} value={values.i} label="Stromstärke (I)" handleChange={e => setValues({ ...values, i: e.target.value })} />
-                <InputField color={colors.r} value={values.r} label="Widerstand (R)" handleChange={e => setValues({ ...values, r: e.target.value })} />
-                <InputField color={colors.p} value={values.p} label="Leistung (P)" handleChange={e => setValues({ ...values, p: e.target.value })} />
-                <button type="submit">Berechnen</button>
-                <button type="button" onClick={handleClear} style={{ marginLeft: 10 }}>Zurücksetzen</button>
-                {values.message && <p style={{ color: "red" }}>{values.message}</p>}
-            </form>
-        </section>
-    );
+        <>
+            <section>
+                <header>
+                    <h2>Formelrad</h2>
+                    <img src={formelrad} width="200" alt="Formelrad"/>
+                    <p>Zwei Werte eingeben, die anderen werden berechnet.</p>
+                </header>
+                <form onSubmit={handleSubmit}>
+                    <InputField color={colors.u} value={values.u} label="Spannung" handleChange={e => {setValues(values => ({...values, u: e.target.value}))}} />
+                    <InputField color={colors.i} value={values.i} label="Stromstärke" handleChange={e => {setValues(values => ({...values, i: e.target.value}))}} />
+                    <InputField color={colors.r} value={values.r} label="Widerstand" handleChange={e => {setValues(values => ({...values, r: e.target.value}))}} />
+                    <InputField color={colors.p} value={values.p} label="Leistung" handleChange={e => {setValues(values => ({...values, p: e.target.value}))}} />
+                    <button type="submit">Calculate</button>
+                    <button style={{margin:10}} onClick={handleClear}>Clear</button>
+                    <p style={{ color: colors.message }}>{values.message}</p>
+                </form>
+            </section>
+        </>
+    )
 }
